@@ -7,12 +7,18 @@ import time
 import datetime
 import data_helpers
 from text_cnn import TextCNN
+import config
+import cPickle
 
 # Parameters
 # ==================================================
 
 # Model Hyperparameters
-tf.flags.DEFINE_integer("embedding_dim", 128, "Dimensionality of character embedding (default: 128)")
+if config.use_word2vec:
+    tf.flags.DEFINE_string("word2vec_pickle_file", "word2vec-vocab.pickle", "full path and name of word2vec pickle file to use /see import_word2vec.py/ (default: word2vec-vocab.pickle)")
+    tf.flags.DEFINE_integer("embedding_dim", 300, "Dimensionality of character embedding (default: 300)")
+else:
+    tf.flags.DEFINE_integer("embedding_dim", 128, "Dimensionality of character embedding (default: 128)")
 tf.flags.DEFINE_string("filter_sizes", "3,4,5", "Comma-separated filter sizes (default: '3,4,5')")
 tf.flags.DEFINE_integer("num_filters", 128, "Number of filters per filter size (default: 128)")
 tf.flags.DEFINE_float("dropout_keep_prob", 0.5, "Dropout keep probability (default: 0.5)")
@@ -41,6 +47,13 @@ print("")
 # Load data
 print("Loading data...")
 x, y, vocabulary, vocabulary_inv = data_helpers.load_data()
+
+w2v = None # {word: [word2vect-vector]}
+if config.use_word2vec:
+    print('Loading word2vec embeddings...')
+    w2v = cPickle.load(open(FLAGS.word2vec_pickle_file, mode='rb'))
+    print('word2vec lookup table size: {}'.format(len(w2v)))
+
 # Randomly shuffle data
 np.random.seed(10)
 shuffle_indices = np.random.permutation(np.arange(len(y)))
@@ -115,7 +128,16 @@ with tf.Graph().as_default():
         saver = tf.train.Saver(tf.all_variables())
 
         # Initialize all variables
+        """
+        print('all_variables():')
+        for v in tf.all_variables():
+            print(v)
+            print(vars(v))
+        """
+        import sys
+        sys.exit()
         sess.run(tf.initialize_all_variables())
+
 
         def train_step(x_batch, y_batch):
             """
