@@ -1,5 +1,5 @@
 Purpose of this fork:
-* Add word2vec pre-trained word emnbeddings
+* Add word2vec pre-trained word embeddings
 * try other stuff
 
 Original README:
