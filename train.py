@@ -48,11 +48,11 @@ print("")
 print("Loading data...")
 x, y, vocabulary, vocabulary_inv = data_helpers.load_data()
 
-w2v = None # {word: [word2vect-vector]}
+w2vW = None # {word: [word2vect-vector]}
 if config.use_word2vec:
     print('Loading word2vec embeddings...')
-    w2v = cPickle.load(open(FLAGS.word2vec_pickle_file, mode='rb'))
-    print('word2vec lookup table size: {}'.format(len(w2v)))
+    w2vW = cPickle.load(open(FLAGS.word2vec_pickle_file, mode='rb'))
+    print('word2vec matrix size: {}'.format(len(w2vW)))
 
 # Randomly shuffle data
 np.random.seed(10)
@@ -83,7 +83,8 @@ with tf.Graph().as_default():
             embedding_size=FLAGS.embedding_dim,
             filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
             num_filters=FLAGS.num_filters,
-            l2_reg_lambda=FLAGS.l2_reg_lambda)
+            l2_reg_lambda=FLAGS.l2_reg_lambda,
+            embedding_init_values=w2vW if config.use_word2vec else None)
 
         # Define Training procedure
         global_step = tf.Variable(0, name="global_step", trainable=False)
@@ -128,16 +129,15 @@ with tf.Graph().as_default():
         saver = tf.train.Saver(tf.all_variables())
 
         # Initialize all variables
-        """
-        print('all_variables():')
-        for v in tf.all_variables():
-            print(v)
-            print(vars(v))
-        """
-        import sys
-        sys.exit()
         sess.run(tf.initialize_all_variables())
 
+        # debug: check embedding matrix:
+        for v in tf.all_variables():
+            if v.name == 'embedding/W:0':
+                print(vars(v))
+                break
+        #import sys
+        #sys.exit()
 
         def train_step(x_batch, y_batch):
             """

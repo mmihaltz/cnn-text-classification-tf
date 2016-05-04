@@ -1,7 +1,8 @@
 #! /usr/bin/env python
 """
-Run this once to export a dictionary {word: word2vec_vector}
+Run this once to export a numpy matrix[i] = vector for word index i
 for the training data vocabulary using word2vec pre-trained embeddings
++ random vectors for unknown words
 into a pickle file.
 """
 
@@ -54,9 +55,21 @@ def add_unknown_words(word_vecs, vocab, k=300):
             word_vecs[word] = np.random.uniform(-0.25,0.25,k)
 
 
+def get_W(word_vecs, vocab_inv, k=300):
+    """
+    source: https://github.com/yoonkim/CNN_sentence/blob/master/process_data.py
+    Get word embedding matrix. W[i] is the vector for word indexed by i
+    """
+    vocab_size = len(word_vecs)
+    W = np.zeros(shape=(vocab_size, k), dtype='float32')
+    for i in range(vocab_size):
+        W[i] = word_vecs[vocab_inv[i]]
+    return W
+
+
 if __name__ == '__main__':
     print("Loading vocabulary...")
-    _x, _y, vocabulary, _vocabulary_inv = data_helpers.load_data()
+    _x, _y, vocabulary, vocabulary_inv = data_helpers.load_data()
     print('Vocabulary size: ' + str(len(vocabulary)))
     print('vocabulary sample:')
     for k in list(sorted(vocabulary.keys()))[:25]:
@@ -69,5 +82,6 @@ if __name__ == '__main__':
     print('w2v sample:')
     for k in list(sorted(w2v.keys()))[:25]:
         print(k, w2v[k][:10])
-    cPickle.dump(w2v, open(word2vec_pickle_file, 'wb'))
+    W = get_W(w2v, vocabulary_inv)
+    cPickle.dump(W, open(word2vec_pickle_file, 'wb'))
     print('Dumped to file: {}'.format(word2vec_pickle_file))

@@ -4,3 +4,6 @@
 # * word vectors have a dimension on 300
 # * initialize word vectors from word2vec
 use_word2vec = True
+
+# If False (and use_word2vec is True), do not train the embedding vectors
+tune_embedding = True
