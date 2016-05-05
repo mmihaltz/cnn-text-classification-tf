@@ -83,5 +83,6 @@ if __name__ == '__main__':
     for k in list(sorted(w2v.keys()))[:25]:
         print(k, w2v[k][:10])
     W = get_W(w2v, vocabulary_inv)
+    print('Matrix {}: {}'.format(type(W), len(W)))
     cPickle.dump(W, open(word2vec_pickle_file, 'wb'))
     print('Dumped to file: {}'.format(word2vec_pickle_file))

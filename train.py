@@ -39,7 +39,9 @@ print("\nParameters:")
 for attr, value in sorted(FLAGS.__flags.items()):
     print("{}={}".format(attr.upper(), value))
 print("")
-
+print('Config values:')
+print('use_word2vec={}'.format(config.use_word2vec))
+print('tune_embedding={}'.format(config.tune_embedding))
 
 # Data Preparatopn
 # ==================================================
@@ -84,7 +86,9 @@ with tf.Graph().as_default():
             filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
             num_filters=FLAGS.num_filters,
             l2_reg_lambda=FLAGS.l2_reg_lambda,
-            embedding_init_values=w2vW if config.use_word2vec else None)
+            embedding_init_values=w2vW if config.use_word2vec else None,
+            tune_embedding=False if config.use_word2vec and not config.tune_embedding
+                else True)
 
         # Define Training procedure
         global_step = tf.Variable(0, name="global_step", trainable=False)

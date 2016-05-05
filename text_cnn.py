@@ -9,7 +9,8 @@ class TextCNN(object):
     def __init__(
       self, sequence_length, num_classes, vocab_size,
       embedding_size, filter_sizes, num_filters, l2_reg_lambda=0.0,
-      embedding_init_values=None):
+      embedding_init_values=None,
+      tune_embedding=True):
 
         # Placeholders for input, output and dropout
         self.input_x = tf.placeholder(tf.int32, [None, sequence_length], name="input_x")
@@ -24,6 +25,7 @@ class TextCNN(object):
             W = tf.Variable(
                     tf.random_uniform([vocab_size, embedding_size], -1.0, 1.0)
                         if embedding_init_values is None else embedding_init_values,
+                    trainable=tune_embedding,
                     name="W")
             self.embedded_chars = tf.nn.embedding_lookup(W, self.input_x)
             self.embedded_chars_expanded = tf.expand_dims(self.embedded_chars, -1)
