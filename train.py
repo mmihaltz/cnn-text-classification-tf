@@ -7,12 +7,18 @@ import time
 import datetime
 import data_helpers
 from text_cnn import TextCNN
+import config
+import cPickle
 
 # Parameters
 # ==================================================
 
 # Model Hyperparameters
-tf.flags.DEFINE_integer("embedding_dim", 128, "Dimensionality of character embedding (default: 128)")
+if config.use_word2vec:
+    tf.flags.DEFINE_string("word2vec_pickle_file", "word2vec-vocab.pickle", "full path and name of word2vec pickle file to use /see import_word2vec.py/ (default: word2vec-vocab.pickle)")
+    tf.flags.DEFINE_integer("embedding_dim", 300, "Dimensionality of character embedding (default: 300)")
+else:
+    tf.flags.DEFINE_integer("embedding_dim", 128, "Dimensionality of character embedding (default: 128)")
 tf.flags.DEFINE_string("filter_sizes", "3,4,5", "Comma-separated filter sizes (default: '3,4,5')")
 tf.flags.DEFINE_integer("num_filters", 128, "Number of filters per filter size (default: 128)")
 tf.flags.DEFINE_float("dropout_keep_prob", 0.5, "Dropout keep probability (default: 0.5)")
@@ -33,7 +39,9 @@ print("\nParameters:")
 for attr, value in sorted(FLAGS.__flags.items()):
     print("{}={}".format(attr.upper(), value))
 print("")
-
+print('Config values:')
+print('use_word2vec={}'.format(config.use_word2vec))
+print('tune_embedding={}'.format(config.tune_embedding))
 
 # Data Preparatopn
 # ==================================================
@@ -41,6 +49,13 @@ print("")
 # Load data
 print("Loading data...")
 x, y, vocabulary, vocabulary_inv = data_helpers.load_data()
+
+w2vW = None # {word: [word2vect-vector]}
+if config.use_word2vec:
+    print('Loading word2vec embeddings...')
+    w2vW = cPickle.load(open(FLAGS.word2vec_pickle_file, mode='rb'))
+    print('word2vec matrix size: {}'.format(len(w2vW)))
+
 # Randomly shuffle data
 np.random.seed(10)
 shuffle_indices = np.random.permutation(np.arange(len(y)))
@@ -70,7 +85,10 @@ with tf.Graph().as_default():
             embedding_size=FLAGS.embedding_dim,
             filter_sizes=list(map(int, FLAGS.filter_sizes.split(","))),
             num_filters=FLAGS.num_filters,
-            l2_reg_lambda=FLAGS.l2_reg_lambda)
+            l2_reg_lambda=FLAGS.l2_reg_lambda,
+            embedding_init_values=w2vW if config.use_word2vec else None,
+            tune_embedding=False if config.use_word2vec and not config.tune_embedding
+                else True)
 
         # Define Training procedure
         global_step = tf.Variable(0, name="global_step", trainable=False)
@@ -116,6 +134,14 @@ with tf.Graph().as_default():
 
         # Initialize all variables
         sess.run(tf.initialize_all_variables())
+
+        # debug: check embedding matrix:
+        for v in tf.all_variables():
+            if v.name == 'embedding/W:0':
+                print(vars(v))
+                break
+        #import sys
+        #sys.exit()
 
         def train_step(x_batch, y_batch):
             """
